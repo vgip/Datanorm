@@ -1,0 +1,21 @@
+{
+    "name": "vgip/datanorm",
+    "description": "Data library",
+    "authors": [
+        {
+            "name": "Vgip"
+        }
+    ],
+    "require": {
+        "php": ">=5.6.0"
+    },
+    "require-dev": {
+
+    },
+    "minimum-stability": "dev",
+    "autoload": {
+        "psr-4": {
+            "Vgip\\Datanorm\\": "src/Datanorm"
+        }
+    }
+}
