@@ -1,6 +1,7 @@
 {
     "name": "vgip/datanorm",
     "description": "Data library",
+    "license": "MIT",
     "authors": [
         {
             "name": "Vgip"
