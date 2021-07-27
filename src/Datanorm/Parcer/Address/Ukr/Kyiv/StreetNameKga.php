@@ -6,7 +6,7 @@ namespace Vgip\Datanorm\Parcer\Address\Ukr\Kyiv;
  * Get data from
  * https://kga.gov.ua/ofitsijni-dokumenti/11-ofitsijni-dokumenti/1261-reestr-vulits-mista-kieva
  * 
- * Register of streets of Kyiv
+ * Register of streets of Kyiv 
  */
 class StreetNameKga
 {
