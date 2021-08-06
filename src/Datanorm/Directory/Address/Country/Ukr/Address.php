@@ -1,11 +1,11 @@
 <?php
 
-namespace Vgip\Datanorm\Directory\Address\Lang;
+namespace Vgip\Datanorm\Directory\Address\Country\Ukr;
 
 /**
  * Regions, locality and street types
  */
-class Ukr
+class Address
 {
     private $regionWhitelist = [
         'vinnytska' => 'Вінницька область',
