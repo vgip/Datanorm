@@ -2,7 +2,17 @@
 
 Data normalization from some open sources
 
-## Functionality
+## Installation
+
+### System Requirements
+You need PHP >= 7.4 but the latest stable version of PHP is recommended
+
+### Composer
+```php
+$ composer require Vgip/Datanorm
+```
+
+## Functionality list
 - Transliteration from Ukrainian into English [KMU 2010-01-27 #55](https://www.kmu.gov.ua/npas/243262567)
 - Kyiv street getter from [kga.gov.ua](https://kga.gov.ua/ofitsijni-dokumenti/11-ofitsijni-dokumenti/1261-reestr-vulits-mista-kieva)
 
@@ -23,7 +33,7 @@ echo $word.' -> '.$wordTransliterated;
     Vgip\Datanorm\Parcer\Address\Ukr\Kyiv\StreetNameKga
 
 #### Get array with normalized data from CSV file
-Check and normalized street name data.
+Check and normalized street name data:
  - Convert possible apostrophe symbols to one symbol (ʼ - 02BC).
  - Check id (forbidden symbols, double). If error see to $this->warning.
  - Check street type by whitelist. 
@@ -35,6 +45,23 @@ Check and normalized street name data.
  - Generate $this->nameDouble array - save 2 or more double street name.
  - Generate $this->nameList - all unique street names.
  - Generate $this->typeCounter - quantity of all street types in Kyiv.
+
+Result array from method getCsvAsArray():
+ - ['number'] - (int) serial number from file
+ - ['id'] - (int) identifier from file
+ - ['name_original'] - (string) street name from file 
+ - ['name'] - (string) normalized street name
+ - ['type_name'] - (string) street type name from file
+ - ['type_key'] - (string) street type key
+ - ['district_string'] - (string) street districts from file
+ - ['district_list'] - (array) street districts ['district_key', 'district_key', ...]
+ - ['document_name'] - (string) Document on assigning the name of the object
+ - ['document_date'] - (string) Date of the document on assigning the name of the object
+ - ['document_number'] - (string) Number of the document on assigning the name of the object
+ - ['document_title'] - (string) The title of the document on the naming of the object
+ - ['place_description'] - (string) Location of the object in the city
+ - ['name_old'] - (string) Former name of the object
+ - ['type_old'] - (string)Former category (type) of the object
 
 #### Example
 ```php
@@ -90,16 +117,19 @@ print_r($res);
 
 
 
-### Ukrainian language
+## Ukrainian language
 
-#### Apostrophe
+### Apostrophe
 
 The resulting data will contain as ukrainian apostrophe symbol "ʼ" unicode symbol U+02BC. All other similar characters in source data (' - U+0027, ’ - U+2019, etc) will be replaced to ʼ (U+02BC).
 U+02BC - this symbol is used in the ukrainian domain name (ICANN).
 - [ukrainian.stackexchange.com](https://ukrainian.stackexchange.com/questions/40/%D0%AF%D0%BA%D0%B8%D0%B9-%D1%81%D0%B8%D0%BC%D0%B2%D0%BE%D0%BB-%D0%B2%D0%B8%D0%BA%D0%BE%D1%80%D0%B8%D1%81%D1%82%D0%BE%D0%B2%D1%83%D0%B2%D0%B0%D1%82%D0%B8-%D0%B4%D0%BB%D1%8F-%D0%BF%D0%BE%D0%B7%D0%BD%D0%B0%D1%87%D0%B5%D0%BD%D0%BD%D1%8F-%D0%B0%D0%BF%D0%BE%D1%81%D1%82%D1%80%D0%BE%D1%84%D0%B0-%D0%B2-%D0%B5%D0%BB%D0%B5%D0%BA%D1%82%D1%80%D0%BE%D0%BD%D0%BD%D0%B8%D1%85-%D1%82%D0%B5%D0%BA%D1%81%D1%82%D0%B0%D1%85-%D1%83%D0%BA%D1%80%D0%B0%D1%97)
 - [linux.org.ua](https://linux.org.ua/index.php?PHPSESSID=5d41ee8e3412408b00269ca80d9f9c5b&topic=1223.300)
 
-#### Street name normalization
+### Street name normalization
 - Position and surname - Академіка Єфремова, Генерала Авдєєнка, Маршала Бірюзова
 - Name and surname - Леоніда Бикова
 - Family relationships and surname - Братів Зерових, Родини Рудинських
+
+## Versioning
+Data normalization follows [Semantic Versioning](https://semver.org/).

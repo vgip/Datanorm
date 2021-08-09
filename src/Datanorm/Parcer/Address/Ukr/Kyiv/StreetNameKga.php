@@ -177,7 +177,22 @@ class StreetNameKga
      * - Generate $this->typeCounter - quantity of all street types in Kyiv.
      * 
      * @param string|null $filePath
-     * @return array|null
+     * @return array|null ['number'] - (int) serial number from file
+     *                    ['id'] - (int) identifier from file
+     *                    ['name_original'] - (string) street name from file 
+     *                    ['name'] - (string) normalized street name
+     *                    ['type_name'] - (string) street type name from file
+     *                    ['type_key'] - (string) street type key
+     *                    ['district_string'] - (string) street districts from file
+     *                    ['district_list'] - (array) street districts 
+     *                                        ['district_key', 'district_key', ...]
+     *                    ['document_name'] - (string) Document on assigning the name of the object
+     *                    ['document_date'] - (string) Date of the document on assigning the name of the object
+     *                    ['document_number'] - (string) Number of the document on assigning the name of the object
+     *                    ['document_title'] - (string) The title of the document on the naming of the object
+     *                    ['place_description'] - (string) Location of the object in the city
+     *                    ['name_old'] - (string) Former name of the object
+     *                    ['type_old'] - (string)Former category (type) of the object
      */
     public function getCsvAsArray(?string $filePath = null): ?array
     {
@@ -230,7 +245,7 @@ class StreetNameKga
                 $csvRow['name'] = $name;
             }
 
-            $dataCsv[] = $csvRow;
+            $dataCsv[] = $this->setFileColumnDataType($csvRow);
         }
 
         $this->generateWarning();
@@ -499,6 +514,49 @@ class StreetNameKga
             10 => 'name_old', /** Колишнє найменування об'єкта */
             11 => 'type_old', /** Колишня категорія (тип) об'єкта */
         ];
+    }
+    
+    /**
+     * Returned types for $this->getCsvAsArray() method
+     * 
+     * @param array $row - row data
+     * @return array
+     */
+    private function setFileColumnDataType(array $row): array
+    {
+        $type = [
+            'number' => 'int',
+            'id' => 'int',
+            'name_original' => 'string',
+            'name' => 'string',
+            'type_name' => 'string',
+            'type_key' => 'string',
+            'district_string' => 'string',
+            'district_list' => 'array',
+            'document_name' => 'string',
+            'document_date' => 'string',
+            'document_number' => 'string',
+            'document_title' => 'string',
+            'place_description' => 'string',
+            'name_old' => 'string',
+            'type_old' => 'string',
+        ];
+
+        $res = [];
+        foreach ($type AS $key => $type) {
+            switch ($type) {
+                case 'int':
+                    $res[$key] = (int)$row[$key];
+                    continue 2;
+                case 'string':
+                    $res[$key] = (string)$row[$key];
+                    continue 2;
+                default:
+                    $res[$key] = $row[$key];
+            }
+        }
+        
+        return $res;
     }
 
     private function getReplaceDistrict(): array
