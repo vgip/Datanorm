@@ -3,7 +3,20 @@
 Data normalization from some open sources
 
 ## Functionality
+- Transliteration from Ukrainian into English [KMU 2010-01-27 #55](https://www.kmu.gov.ua/npas/243262567)
 - Kyiv street getter from [kga.gov.ua](https://kga.gov.ua/ofitsijni-dokumenti/11-ofitsijni-dokumenti/1261-reestr-vulits-mista-kieva)
+
+
+### Transliteration from Ukrainian into English [KMU 2010-01-27 #55](https://www.kmu.gov.ua/npas/243262567)
+
+```php
+use Vgip\Datanorm\Transliteration\UkrEng\Cabmin2010;
+
+$word = 'Єзгїґіпенєп';
+$cabmin2010 = new Cabmin2010();
+$wordTransliterated = $cabmin2010->transliterate($word);
+echo $word.' -> '.$wordTransliterated;
+```
 
 
 ### Kyiv street getter from [kga.gov.ua](https://kga.gov.ua/ofitsijni-dokumenti/11-ofitsijni-dokumenti/1261-reestr-vulits-mista-kieva)
@@ -53,9 +66,10 @@ $streetNameKga->setDistrictWhitelist($districtWhitelist);
 $streetNameKga->setStreetNormalization($streetNormalizedList);
 $streetNameKga->setPatternStreetName($patternStreetName);
 
-/** Get array with normalized data */
+/** Get a result (array) with normalized data */
 $data = $streetNameKga->getCsvAsArray($pathSourceFile);
 
+/** Get other data */
 $res = [];
 $res['type_list'] = $streetNameKga->getTypeList();
 $res['type_counter'] = $streetNameKga->getTypeCounter();
@@ -63,6 +77,7 @@ $res['name_list'] = $streetNameKga->getNameList();
 $res['name_double'] = $streetNameKga->getNameDouble();
 $res['district_not_whitelist'] = $streetNameKga->getDistrictNotFound();
 
+/** Get warnings if present */
 $warning = $streetNameKga->getWarning();
 $warningValue = $streetNameKga->getWarningValue();
 if (null !== $warning AND count($warning) > 0) {
