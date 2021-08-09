@@ -23,15 +23,6 @@ class StreetNameKga
     private string $filePath = 'KyivStreet.csv';
 
     /**
-     * File column name
-     * 
-     * Column serial number to key accordance
-     * 
-     * @var array 
-     */
-    private array $fileColumnStructure = [];
-
-    /**
      * Type street whitelist
      * 
      * @var array
@@ -48,9 +39,11 @@ class StreetNameKga
     /**
      * Street name normalization
      * 
-     * @var array
+     * @var array - ['street name as in file' => 'normalized name']
      */
-    private array $streetNormalization = [];
+    private array $streetNormalization = [
+        'Міжозерна (Західно-Кільцева)' => 'Міжозерна',
+    ];
 
     /**
      * Street name pattern
@@ -59,7 +52,16 @@ class StreetNameKga
      * 
      * @var string - pattern to preg_match()
      */
-    private string $patternStreetName;
+    private string $patternStreetName = '~[0-9абвгґдеєжзиіїйклмнопрстуфхцчшщьюяҐІЇЄ\s\-\.]*~ui';
+    
+    /**
+     * File column name
+     * 
+     * Column serial number to key accordance
+     * 
+     * @var array 
+     */
+    private array $fileColumnStructure = [];
 
     /**
      * Source identifier
@@ -77,10 +79,12 @@ class StreetNameKga
      * 
      * @var array|null
      */
-    private ?array $typeList;
+    private ?array $typeList = null;
 
     /**
      * Street name list
+     * 
+     * This data save after csv file processing
      * 
      * @var array
      */
@@ -96,12 +100,21 @@ class StreetNameKga
     /**
      * Counter of street types
      * 
-     * @var type array|null
+     * Quantity of all street types in Kyiv
+     * 
+     * @var type array|null - [street] => 2089, [road] => 5, ...
      */
-    private ?array $typeCounter;
+    private ?array $typeCounter = null;
     
     /**
-     * Found some warnins
+     * Name double in city 
+     * 
+     * @var array
+     */
+    private array $nameDouble = [];
+    
+    /**
+     * Found some warnings
      * 
      * If present warnings, then count($this->warning) > 0 else count($this->warning) == 0
      * 
@@ -110,11 +123,11 @@ class StreetNameKga
     private ?array $warning = null;
     
     /**
-     * Source identifier error
+     * Source values error
      * 
      * @var array
      */
-    private array $idError = [];
+    private array $warningValue = [];
 
     /**
      * Type not found in $this->typeWhitelist
@@ -133,13 +146,6 @@ class StreetNameKga
     private array $districtNotFound = [];
 
     /**
-     * Name double in city 
-     * 
-     * @var array
-     */
-    private array $nameDouble = [];
-
-    /**
      * Street name not valid (contain forbidden symbols)
      * 
      * Pattern valid street name: $this->patternStreetName
@@ -150,12 +156,36 @@ class StreetNameKga
 
     public function __construct()
     {
-        $this->initFileColumnStructure();/** Init default file column structure */;
+        $this->initFileColumnStructure(); /** Init default file column structure */
     }
 
-    public function getCsvAsArray()
+    /**
+     * Get array with normalized data from CSV file
+     * 
+     * Check and normalized street name data.
+     * - Convert form a file charset Windows-1251 to UTF-8.
+     * - Convert possible apostrophe symbols to one symbol (ʼ - 02BC).
+     * - Check id (forbidden symbols, double). If error see to $this->warning. 
+     * - Check street type by whitelist. 
+     *   New type save to $this->warning and this->typeNotFound.
+     * - Check Kyiv district name by whitelist.
+     *   New Kyiv district name save to $this->warning and this->districtNotFound.
+     * - Check the street names and normalized street names .
+     *   (if data saved to $this->streetNormalization array)
+     * - Generate $this->nameDouble array - save 2 or more double street name.
+     * - Generate $this->nameList - all unique street names.
+     * - Generate $this->typeCounter - quantity of all street types in Kyiv.
+     * 
+     * @param string|null $filePath
+     * @return array|null
+     */
+    public function getCsvAsArray(?string $filePath = null): ?array
     {
-        $this->initTypeCounter();/** Set 0 (zero) to all keys of counter $this->typeCounter - ONLY AFTER initTypeCounter set! */;
+        /** Set 0 (zero) to all keys of counter $this->typeCounter - ONLY AFTER initTypeCounter set! */;
+        $this->initTypeCounter();
+        
+        /** Set $this->filePath file path if not null */
+        $this->setFilePath($filePath);
 
         $dataCsv = null;
 
@@ -193,11 +223,11 @@ class StreetNameKga
             $csvRow['district_list'] = $district;
 
             /** Street */
-            if (false !== $type) {
+            if (null === $type) {
+                $csvRow['name'] = '';
+            } else {
                 $name = $this->processName($type, $csvRow['name_original']);
                 $csvRow['name'] = $name;
-            } else {
-                $csvRow['name'] = '';
             }
 
             $dataCsv[] = $csvRow;
@@ -208,7 +238,14 @@ class StreetNameKga
         return $dataCsv;
     }
 
-    public function getStreetNameHash($type, $name)
+    /**
+     * Get hash for street (type + street name)
+     * 
+     * @param string $type
+     * @param string $name
+     * @return string
+     */
+    public function getStreetNameHash(string $type, string $name): string
     {
         $deleteSymbolName = [' ', '\'', '’', '-'];
         $typeForHash = mb_strtolower(str_replace('\'', '', $type));
@@ -219,54 +256,54 @@ class StreetNameKga
         return $hash;
     }
 
-    public function getFilePath()
+    public function getFilePath(): string
     {
         return $this->filePath;
     }
 
-    public function getFileColumnStructure()
-    {
-        return $this->fileColumnStructure;
-    }
-
-    public function getTypeWhitelist()
+    public function getTypeWhitelist(): array
     {
         return $this->typeWhitelist;
     }
     
-    public function getDistrictWhitelist()
+    public function getDistrictWhitelist(): array
     {
         return $this->districtWhitelist;
     }
 
-    public function getPatternStreetName()
+    public function getPatternStreetName(): string
     {
         return $this->patternStreetName;
     }
 
-    public function getId()
+    public function getId(): array
     {
         return $this->id;
     }
 
-    public function getTypeList()
+    public function getTypeList(): ?array
     {
         return $this->typeList;
     }
 
-    public function getNameList()
+    public function getNameList(): array
     {
         return $this->nameList;
     }
 
-    public function getFileRowNumber()
+    public function getFileRowNumber(): int
     {
         return $this->fileRowNumber;
     }
 
-    public function getTypeCounter()
+    public function getTypeCounter(): ?array
     {
         return $this->typeCounter;
+    }
+    
+    public function getNameDouble(): array
+    {
+        return $this->nameDouble;
     }
 
     public function getWarning(): ?array
@@ -274,47 +311,39 @@ class StreetNameKga
         return $this->warning;
     }
     
-    public function getIdError()
+    public function getWarningValue(): array
     {
-        return $this->idError;
+        return $this->warningValue;
     }
 
-    public function getTypeNotFound()
+    public function getTypeNotFound(): array
     {
         return $this->typeNotFound;
     }
     
-    public function getDistrictNotFound()
+    public function getDistrictNotFound(): array
     {
         return $this->districtNotFound;
     }
 
-    public function getNameDouble()
-    {
-        return $this->nameDouble;
-    }
-
-    public function getNameNotValid()
+    public function getNameNotValid(): array
     {
         return $this->nameNotValid;
     }
-
-    public function setFilePath($filePath)
+    
+    public function setFilePath(?string $filePathRaw): void
     {
-        $this->filePath = $filePath;
+        if (null !== $filePathRaw) {
+            $this->filePath = $filePathRaw;
+        }
     }
 
-    public function setFileColumnStructure($fileColumnStructure)
-    {
-        $this->fileColumnStructure = $fileColumnStructure;
-    }
-
-    public function setTypeWhitelist($typeWhitelist)
+    public function setTypeWhitelist(array $typeWhitelist): void
     {
         $this->typeWhitelist = $typeWhitelist;
     }
     
-    public function setDistrictWhitelist($districtWhitelist)
+    public function setDistrictWhitelist(array $districtWhitelist): void
     {
         $this->districtWhitelist = $districtWhitelist;
     }
@@ -324,19 +353,19 @@ class StreetNameKga
         $this->streetNormalization = $streetNormalization;
     }
 
-    public function setPatternStreetName($patternStreetName)
+    public function setPatternStreetName(string $patternStreetName): void
     {
         $this->patternStreetName = $patternStreetName;
     }
 
-    private function initTypeCounter()
+    private function initTypeCounter(): void
     {
         foreach ($this->typeWhitelist AS $key => $val) {
             $this->typeCounter[$key] = 0;
         }
     }
 
-    private function processId($idRaw)
+    private function processId(?string $idRaw)
     {
         $idRes = null;
         $idErrNum = 0;
@@ -344,10 +373,10 @@ class StreetNameKga
         $idInt = (int)$idRaw;
         if ((string)$idInt !== (string)$idRaw) {
             $idErrNum++;
-            $this->idError['id_'.$this->fileRowNumber] = 'identifier in the string #'.$this->fileRowNumber.' "'.$idRaw.'" incorrect';
+            $this->warningValue['id_'.$this->fileRowNumber] = 'identifier in the string #'.$this->fileRowNumber.' "'.$idRaw.'" incorrect';
         } else {
             if (array_key_exists($idInt, $this->id)) {
-                $this->idError['id_'.$this->fileRowNumber] = 'identifier "'.$idInt.'" in the string #'.$this->fileRowNumber.' is double';
+                $this->warningValue['id_'.$this->fileRowNumber] = 'identifier "'.$idInt.'" in the string #'.$this->fileRowNumber.' is double';
             } else {
                 $this->id[$idInt] = $idInt;
                 $idRes = $idInt;
@@ -357,18 +386,20 @@ class StreetNameKga
         return $idRes;
     }
 
-    private function processType($typeName)
+    private function processType(string $typeName): ?string
     {
         $typeKey = array_search($typeName, $this->typeWhitelist);
         if (false === $typeKey) {
-            $this->idError['type_'.$this->fileRowNumber] = 'new type name "'.$typeName.'" found in the string #'.$this->fileRowNumber.'';
+            $this->warningValue['type_'.$this->fileRowNumber] = 'new type name "'.$typeName.'" found in the string #'.$this->fileRowNumber.'';
             $this->typeNotFound[$typeName] = '"' . $typeName . '"';
+            $typeRes = null;
         } else {
             $this->typeCounter[$typeKey]++;
             $this->typeList[$typeKey] = $typeName;
+            $typeRes = (string)$typeKey;
         }
 
-        return $typeKey;
+        return $typeRes;
     }
 
     /**
@@ -377,9 +408,9 @@ class StreetNameKga
      * One street can be located in 2 or more districts
      * 
      * @param string $districtRow
-     * @return array|null
+     * @return array|null - list of street districts
      */
-    private function processDistrict($districtRow)
+    private function processDistrict(string $districtRow): array
     {
         $district = [];
         
@@ -407,13 +438,13 @@ class StreetNameKga
         return $district;
     }
 
-    private function processName($type, $nameRaw)
+    private function processName(string $type, string $nameRaw): ?string
     {
-        $nameNormazlized = $this->namePrepare($nameRaw);
+        $nameNormalized = $this->namePrepare($nameRaw);
 
         $name = null;
-        if (preg_match($this->patternStreetName, $nameNormazlized)) {
-            $hash = $this->getStreetNameHash($type, $nameNormazlized);
+        if (preg_match($this->patternStreetName, $nameNormalized)) {
+            $hash = $this->getStreetNameHash($type, $nameNormalized);
             if (array_key_exists($hash, $this->nameList)) {
                 if (array_key_exists($hash, $this->nameDouble)) {
                     $this->nameDouble[$hash]++;
@@ -421,37 +452,38 @@ class StreetNameKga
                     $this->nameDouble[$hash] = 2;
                 }
             }
-            $this->nameList[$hash] = $nameNormazlized;
-            $name = $nameNormazlized;
+            $this->nameList[$hash] = $nameNormalized;
+            $name = $nameNormalized;
         } else {
-            $this->idError['name_'.$this->fileRowNumber] = 'street name "'.$type . ' ' . $nameNormazlized.'" has forbidden symbols in the string #'.$this->fileRowNumber.'';
-            $this->nameNotValid[] = $type . ' ' . $nameNormazlized;
+            $this->warningValue['name_'.$this->fileRowNumber] = 'street name "'.$type . ' ' . $nameNormalized.'" has forbidden symbols in the string #'.$this->fileRowNumber.'';
+            $this->nameNotValid[] = $type . ' ' . $nameNormalized;
         }
 
         return $name;
     }
 
-    private function namePrepare($nameRaw)
+    private function namePrepare(string $nameRaw): string
     {
-        $name1 = str_replace('’', '\'', $nameRaw);
-        $name2 = preg_replace('~(.*)( \(Озерна [0-9]{1,2}\))~ui', '$1', $name1);
-        $name3 = preg_replace('~(Проектна \- [0-9]{4,6} )\(([0-9]{1,2})(-([а-я]{2})) Абрикосова\)~ui', '$2-а Абрикосова', $name2);
+        $name = [];
+        $name['raw'] = str_replace('’', '\'', $nameRaw);
+        /** Example: Берізоньки (Озерна 14) -> Берізоньки */
+        $name['raw'] = preg_replace('~(.*)( \(Озерна [0-9]{1,2}\))~ui', '$1', $name['raw']);
+        /** Example: Проектна - 13125 (1-ша Абрикосова) -> 1-ша Абрикосова */
+        $name['raw'] = preg_replace('~(Проектна \- [0-9]{4,6} )\(([0-9]{1,2}-[а-я]{2}) Абрикосова\)~ui', '$2 Абрикосова', $name['raw']);
 
-        if (array_key_exists($name3, $this->streetNormalization)) {
-            $name4 = $this->streetNormalization[$name3];
-        } else {
-            $name4 = $name3;
+        if (array_key_exists($name['raw'], $this->streetNormalization)) {
+            $name['raw'] = $this->streetNormalization[$name['raw']];
         }
 
-        $name = trim($name4);
+        $name['raw'] = trim($name['raw']);
 
-        return $name;
+        return $name['raw'];
     }
 
     /**
      * Default initilization file column structure
      */
-    private function initFileColumnStructure()
+    private function initFileColumnStructure(): void
     {
         $this->fileColumnStructure = [
             0 => 'number', /** № п/п */
@@ -469,11 +501,9 @@ class StreetNameKga
         ];
     }
 
-    private function getReplaceDistrict()
+    private function getReplaceDistrict(): array
     {
         $replace = [
-            'Солом’янський' => 'Солом\'янський',
-            'Дарницький (Бортничі)' => 'Дарницький',
             'Дарницький (Бортничі)' => 'Дарницький',
             'Оболонський (КДТ "Чорнобилець")' => 'Оболонський',
             'Оболонський (СТ "Оболонь")' => 'Оболонський',
@@ -486,7 +516,7 @@ class StreetNameKga
         return $replace;
     }
     
-    private function generateWarning()
+    private function generateWarning(): void
     {
         if (count($this->typeNotFound) > 0) {
             $this->warning['type_new'][0] = 'new street types found: ' . join(', ', $this->typeNotFound) . '';
@@ -497,7 +527,8 @@ class StreetNameKga
         if (count($this->nameNotValid) > 0) {
             $this->warning['name_not_valid'][0] = 'street names contain forbidden symbols: ' . join(', ', $this->nameNotValid) . '';
         }
-        foreach ($this->idError AS $key => $value) {
+        
+        foreach ($this->warningValue AS $key => $value) {
             $this->warning[$key] = $value;
         }
     }

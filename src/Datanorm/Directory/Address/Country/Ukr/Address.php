@@ -1,13 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Vgip\Datanorm\Directory\Address\Country\Ukr;
+
+use Vgip\Datanorm\Common\Singleton;
 
 /**
  * Regions, locality and street types
  */
 class Address
 {
-    private $regionWhitelist = [
+    use Singleton;
+    
+    private array $regionWhitelist = [
         'vinnytska' => 'Вінницька область',
         'volynska' => 'Волинська область',
         'dnipropetrovska' => 'Дніпропетровська область',
@@ -37,7 +43,7 @@ class Address
         'chernihivska' => 'Чернігівська область',
     ];
 
-    private $localityTypeWhitelist = [
+    private array $localityTypeWhitelist = [
         'city'                  => 'місто',
         'uts'                   => 'смт',
         'settlement'            => 'селище',
@@ -53,7 +59,7 @@ class Address
      * 
      * @var string
      */
-    private $localityTypeAbbreviationWhitelist = [
+    private array $localityTypeAbbreviationWhitelist = [
         'city'                  => 'м.',
         'uts'                   => 'смт ',
         'settlement'            => 'с-ще ',
@@ -65,7 +71,7 @@ class Address
      * 
      * @var string
      */
-    private $streetTypeWhitelist = [
+    private array $streetTypeWhitelist = [
         'alley'                 => 'алея',
         'boulevard'             => 'бульвар',
         'entry'                 => 'в\'їзд',
@@ -84,7 +90,7 @@ class Address
         'highway'               => 'шосе',
     ];
 
-    private $streetTypeAbbreviationWhitelist = [
+    private array $streetTypeAbbreviationWhitelist = [
         'alley'                 => 'алея',
         'boulevard'             => 'бульв.',
         'entry'                 => 'в\'їзд',
@@ -103,27 +109,27 @@ class Address
         'highway'               => 'шосе',
     ];
     
-    public function getRegionWhitelist()
+    public function getRegionWhitelist(): array
     {
         return $this->regionWhitelist;
     }
 
-    public function getLocalityTypeWhitelist()
+    public function getLocalityTypeWhitelist(): array
     {
         return $this->localityTypeWhitelist;
     }
 
-    public function getLocalityTypeAbbreviationWhitelist()
+    public function getLocalityTypeAbbreviationWhitelist(): array
     {
         return $this->localityTypeAbbreviationWhitelist;
     }
 
-    public function getStreetTypeWhitelist()
+    public function getStreetTypeWhitelist(): array
     {
         return $this->streetTypeWhitelist;
     }
 
-    public function getStreetTypeAbbreviationWhitelist()
+    public function getStreetTypeAbbreviationWhitelist(): array
     {
         return $this->streetTypeAbbreviationWhitelist;
     }

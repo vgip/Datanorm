@@ -6,6 +6,10 @@ namespace Vgip\Datanorm\Directory\Address\Country\Ukr;
 
 use Vgip\Datanorm\Directory\Address\Country\Ukr\StreetNormalizedList;
 
+/**
+ * Check and normalize street names
+ * Example: "Anysurname Адмірала" to "Адмірала Anysurname"
+ */
 class StreetNormalization
 {
     private array $part2swap = [
@@ -117,6 +121,11 @@ class StreetNormalization
         'Ярослава',
     ];
     
+    /**
+     * 
+     * @param array $streetList
+     * @return array
+     */
     public function normalize(array $streetList): array
     {
         $res = [];
